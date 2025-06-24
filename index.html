@@ -1,1 +1,174 @@
-...
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi Ritmo Emocional</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#6a4c93" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: #fdf7f2;
+      margin: 0;
+      padding: 0;
+      color: #444;
+      transition: background 0.3s, color 0.3s;
+    }
+    header {
+      background: linear-gradient(to right, #6a4c93, #b5838d);
+      color: white;
+      text-align: center;
+      padding: 1.5rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    main {
+      max-width: 700px;
+      margin: auto;
+      padding: 1rem;
+    }
+    section {
+      background: white;
+      margin-bottom: 1.5rem;
+      padding: 1.2rem;
+      border-radius: 15px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+    label {
+      display: block;
+      margin-top: 0.6rem;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #6a4c93;
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      margin-top: 1rem;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    canvas {
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🌟 Mi Ritmo Emocional</h1>
+    <p>Tu espacio diario de autocuidado</p>
+  </header>
+  <main>
+    <section>
+      <h2>Registro Diario</h2>
+      <label for="emocion">¿Cómo te sientes hoy?</label>
+      <select id="emocion">
+        <option value="5">Muy feliz</option>
+        <option value="4">Tranquilo</option>
+        <option value="3">Ansioso</option>
+        <option value="2">Irritable</option>
+        <option value="1">Triste</option>
+      </select>
+      <label for="nota">¿Quieres escribir algo más?</label>
+      <textarea id="nota" rows="3"></textarea>
+      <label for="energia">¿Qué nivel de energía tienes hoy? (1-10)</label>
+      <input type="number" id="energia" min="1" max="10" />
+      <label for="hidratacion">¿Te hidrataste bien hoy?</label>
+      <select id="hidratacion">
+        <option>Sí, lo suficiente</option>
+        <option>Un poco</option>
+        <option>Casi no</option>
+      </select>
+      <button onclick="guardarDatos()">Guardar Registro</button>
+    </section>
+    <section>
+      <h2>Gráficas Semanales</h2>
+      <canvas id="graficaEmocion"></canvas>
+      <canvas id="graficaEnergia"></canvas>
+      <canvas id="graficaHidratacion"></canvas>
+    </section>
+  </main>
+  <script>
+    function guardarDatos() {
+      const fecha = new Date().toLocaleDateString("es-MX");
+      const datos = {
+        emocion: document.getElementById('emocion').value,
+        nota: document.getElementById('nota').value,
+        energia: parseInt(document.getElementById('energia').value),
+        hidratacion: document.getElementById('hidratacion').value
+      };
+      let historial = JSON.parse(localStorage.getItem('historial')) || {};
+      historial[fecha] = datos;
+      localStorage.setItem('historial', JSON.stringify(historial));
+      alert("Guardado ✅");
+      cargarGraficas();
+    }
+
+    function cargarGraficas() {
+      const historial = JSON.parse(localStorage.getItem('historial')) || {};
+      const fechas = Object.keys(historial).slice(-7);
+      const emociones = fechas.map(f => parseInt(historial[f].emocion));
+      const energias = fechas.map(f => parseInt(historial[f].energia));
+      const hidrataciones = fechas.map(f => {
+        const valor = historial[f].hidratacion;
+        if (valor === "Sí, lo suficiente") return 3;
+        if (valor === "Un poco") return 2;
+        return 1;
+      });
+
+      new Chart(document.getElementById('graficaEmocion'), {
+        type: 'bar',
+        data: {
+          labels: fechas,
+          datasets: [{ label: 'Emoción (1-5)', data: emociones, backgroundColor: '#f47c7c' }]
+        },
+        options: { scales: { y: { min: 1, max: 5 } } }
+      });
+
+      new Chart(document.getElementById('graficaEnergia'), {
+        type: 'bar',
+        data: {
+          labels: fechas,
+          datasets: [{ label: 'Energía (1-10)', data: energias, backgroundColor: '#6a4c93' }]
+        },
+        options: { scales: { y: { min: 1, max: 10 } } }
+      });
+
+      new Chart(document.getElementById('graficaHidratacion'), {
+        type: 'bar',
+        data: {
+          labels: fechas,
+          datasets: [{
+            label: 'Hidratación (1–3)',
+            data: hidrataciones,
+            backgroundColor: '#5bc0eb'
+          }]
+        },
+        options: {
+          scales: { y: { min: 1, max: 3 } },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw;
+                  return val === 3 ? "Sí, lo suficiente" : val === 2 ? "Un poco" : "Casi no";
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    cargarGraficas();
+  </script>
+</body>
+</html>
